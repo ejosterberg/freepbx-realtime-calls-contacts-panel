@@ -23,8 +23,10 @@ export function parseFreepbxConf(raw: string): PbxConfig {
     const key = PBX_CONFIG_OPTIONS.find(o => split[0].includes(o));
     if (!key)
       return;
-    const val = split[1].match(/'([\S\s]*)'\s*;/)?.[1];
-    options[key] = val || '';
+    // FreePBX 16 writes single-quoted values, FreePBX 17 writes double-quoted.
+    // Match either: "..." or '...' followed by optional whitespace and ;
+    const val = split[1].match(/['"]([\S\s]*?)['"]\s*;/)?.[1];
+    options[key] = val ?? '';
   });
 
   if (!PBX_CONFIG_OPTIONS.every(option => typeof options[option] === 'string'))
@@ -49,17 +51,22 @@ export async function initDb() {
   const pbxConfigRaw = await readFile(getConfig().freepbxConfFile, 'utf-8');
   const pbxConfig = parseFreepbxConf(pbxConfigRaw);
 
+  // Node 18+ resolves "localhost" to ::1 (IPv6) first via getaddrinfo,
+  // but MariaDB on Debian 12 listens only on 127.0.0.1 by default, so the
+  // connection refuses. Force IPv4 by coercing localhost -> 127.0.0.1.
+  const host = pbxConfig.AMPDBHOST === 'localhost' ? '127.0.0.1' : pbxConfig.AMPDBHOST;
+
   pool = createPool({
     user: pbxConfig.AMPDBUSER,
-    host: pbxConfig.AMPDBHOST,
+    host,
     database: pbxConfig.AMPDBNAME,
     password: pbxConfig.AMPDBPASS,
     port: parseInt(pbxConfig.AMPDBPORT),
   });
-  
+
   poolCdr = createPool({
     user: pbxConfig.AMPDBUSER,
-    host: pbxConfig.AMPDBHOST,
+    host,
     database: CDR_DB_NAME,
     password: pbxConfig.AMPDBPASS,
     port: parseInt(pbxConfig.AMPDBPORT),

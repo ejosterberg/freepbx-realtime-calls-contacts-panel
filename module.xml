@@ -1,33 +1,31 @@
 <module>
   <rawname>callpanel</rawname>
   <name>Calls + Contacts Panel</name>
-  <version>16.0.0</version>
-  <publisher>Alexander Droste</publisher>
+  <version>17.0.0</version>
+  <publisher>Alexander Droste (original), Eric Osterberg (fork)</publisher>
   <license>AGPLv3</license>
-  <changelog>*16.0.0* Initial release</changelog>
+  <changelog>*17.0.0* Fork: FreePBX 17 compatibility, Node 18+, npm build wired into install, PHP 8.x null-safety, license metadata fixes
+*16.0.0* Initial release (upstream by Alexander Droste)</changelog>
   <category>Admin</category>
   <description>Realtime Calls and Contacts Panel</description>
   <menuitems>
     <callpanel>Calls + Contacts Panel</callpanel>
   </menuitems>
   <depends>
-		<module>contactmanager ge 16.0.17</module>
-		<module>cidlookup ge 16.0.5</module>
-		<module>pm2 ge 13.0.3.8</module>
-	</depends>
-  <supported>16.0</supported>
+    <module>contactmanager ge 16.0.17</module>
+    <module>cidlookup ge 16.0.5</module>
+    <module>pm2 ge 13.0.3.8</module>
+  </depends>
+  <supported>
+    <version>16.0</version>
+    <version>17.0</version>
+  </supported>
   <hooks>
-		<!-- <framework class="Chown" namespace="FreePBX\Console\Command">
-			<method callingMethod="fwcChownFiles" class="Ucp">chownFreepbx</method>
-		</framework> -->
-		<!-- <certman class="Certman" namespace="FreePBX\modules">
-			<method callingMethod="makeCertDefault" class="Ucp">setDefaultCert</method>
-		</certman> -->
-		<framework class="Start" namespace="FreePBX\Console\Command">
-			<method callingMethod="postAsteriskHooks" class="Ucp">startFreepbx</method>
-		</framework>
-		<framework class="Stop" namespace="FreePBX\Console\Command">
-			<method callingMethod="preAsteriskHooks" class="Ucp">stopFreepbx</method>
-		</framework>
-	</hooks>
+    <framework class="Start" namespace="FreePBX\Console\Command">
+      <method callingMethod="postAsteriskHooks" class="Ucp">startFreepbx</method>
+    </framework>
+    <framework class="Stop" namespace="FreePBX\Console\Command">
+      <method callingMethod="preAsteriskHooks" class="Ucp">stopFreepbx</method>
+    </framework>
+  </hooks>
 </module>

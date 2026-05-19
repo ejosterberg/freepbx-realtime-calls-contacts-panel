@@ -5,9 +5,11 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 class Callpanel implements \BMO
 {
-	private $nodever = '14.15.0';
-	private $npmver = '6.14.8';
+	private $nodever = '18.0.0';
+	private $npmver = '8.0.0';
 	private $nodeloc = '/tmp';
+	private $freepbx;
+	private $db;
 
 	public function __construct($freepbx = null)
 	{
@@ -63,12 +65,30 @@ class Callpanel implements \BMO
 				"The following messages are ONLY FOR DEBUGGING. Ignore anything that says 'WARN' or is just a warning"
 			);
 		}
-		$this->freepbx->Pm2->installNodeDependencies($this->nodeloc, function (
-			$data
-		) {
-			outn($data);
-		});
-		out('');
+		// Skip Pm2->installNodeDependencies — it installs production-only on
+		// FreePBX 17, which omits TypeScript (devDep) needed for our build.
+		// Install both backend + frontend deps with devDeps included, then build.
+		out(_('Installing backend dependencies (npm ci, includes devDeps)...'));
+		exec('cd ' . escapeshellarg($this->nodeloc) . ' && npm ci --include=dev --no-audit --no-fund 2>&1', $beInstallOut, $beInstallRc);
+		foreach ($beInstallOut as $line) { out($line); }
+		if ($beInstallRc !== 0) {
+			out(_('Backend dep install failed!'));
+			return false;
+		}
+		out(_('Building backend (tsc)...'));
+		exec('cd ' . escapeshellarg($this->nodeloc) . ' && npm run build 2>&1', $buildOut, $buildRc);
+		foreach ($buildOut as $line) { out($line); }
+		if ($buildRc !== 0) {
+			out(_('Backend build failed!'));
+			return false;
+		}
+		out(_('Installing + building frontend (react-scripts)...'));
+		exec('cd ' . escapeshellarg($this->nodeloc . '/frontend') . ' && npm ci --include=dev --no-audit --no-fund 2>&1 && npm run build 2>&1', $feOut, $feRc);
+		foreach ($feOut as $line) { out($line); }
+		if ($feRc !== 0) {
+			out(_('Frontend build failed!'));
+			return false;
+		}
 		out(_('Finished updating libraries!'));
 
 		$this->stopFreepbx();
@@ -102,14 +122,16 @@ class Callpanel implements \BMO
 	//process form
 	public function doConfigPageInit($page)
 	{
-		if ($_SERVER['REQUEST_METHOD'] != 'POST' || $_POST['randcheck'] != $_SESSION['rand']) {
+		if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+			|| ($_POST['randcheck'] ?? null) !== ($_SESSION['rand'] ?? null)) {
 			return;
 		}
 
-		$currentLocalconf = $this->readConfig()['local']; 
+		$needsRestart = false;
+		$currentLocalconf = $this->readConfig()['local'];
 		$localconf = $currentLocalconf;
 		if (!empty($_POST['callerIdPrefixes'])) {
-			$localconf['callerIdPrefixes'] = array_values(array_filter(array_map('trim', explode(',', $_POST['callerIdPrefixes']))));
+			$localconf['callerIdPrefixes'] = array_values(array_filter(array_map('trim', explode(',', (string)$_POST['callerIdPrefixes']))));
 		} else {
 			unset($localconf['callerIdPrefixes']);
 		}
@@ -174,7 +196,7 @@ class Callpanel implements \BMO
 			}
 		}
 
-		$changeStatus = $_POST['changeStatus'];
+		$changeStatus = $_POST['changeStatus'] ?? '';
 		if ($changeStatus == 'stop') {
 			$stopped = $this->stopFreepbx();
 			if (!$stopped) {
@@ -196,7 +218,7 @@ class Callpanel implements \BMO
 	public function getActionBar($request)
 	{
 		$buttons = [];
-		switch ($_GET['display']) {
+		switch ($_GET['display'] ?? '') {
 			case 'callpanel':
 				$buttons = [
 					'reset' => [
@@ -218,7 +240,7 @@ class Callpanel implements \BMO
 	{
 		$conf = $this->readConfig();
 		$status = $this->freepbx->Pm2->getStatus('callpanel');
-		$running = $status['pm2_env']['status'] == 'online';
+		$running = is_array($status) && (($status['pm2_env']['status'] ?? '') === 'online');
 		return load_view(__DIR__ . '/views/main.php', [
 			'defaultconf' => $conf['default'],
 			'localconf' => $conf['local'],
@@ -239,7 +261,11 @@ class Callpanel implements \BMO
 	public function startFreepbx($output = null)
 	{
 		$status = $this->freepbx->Pm2->getStatus('callpanel');
-		switch ($status['pm2_env']['status']) {
+		// FreePBX 17's Pm2->getStatus() returns false when process not registered.
+		$statusStr = (is_array($status) && isset($status['pm2_env']['status']))
+			? $status['pm2_env']['status']
+			: 'stopped';
+		switch ($statusStr) {
 			case 'online':
 				if (is_object($output)) {
 					$output->writeln(
@@ -273,8 +299,8 @@ class Callpanel implements \BMO
 				while ($i < 10) {
 					$data = $this->freepbx->Pm2->getStatus('callpanel');
 					if (
-						!empty($data) &&
-						$data['pm2_env']['status'] == 'online'
+						is_array($data) &&
+						(($data['pm2_env']['status'] ?? '') === 'online')
 					) {
 						if (is_object($output)) {
 							$progress->finish();
@@ -324,7 +350,7 @@ class Callpanel implements \BMO
 	public function stopFreepbx($output = null)
 	{
 		$data = $this->freepbx->Pm2->getStatus('callpanel');
-		if (empty($data) || $data['pm2_env']['status'] != 'online') {
+		if (empty($data) || !is_array($data) || ($data['pm2_env']['status'] ?? '') != 'online') {
 			if (is_object($output)) {
 				$output->writeln(
 					'<error>' .
@@ -343,7 +369,7 @@ class Callpanel implements \BMO
 		$this->freepbx->Pm2->stop('callpanel');
 
 		$data = $this->freepbx->Pm2->getStatus('callpanel');
-		if (empty($data) || $data['pm2_env']['status'] != 'online') {
+		if (empty($data) || !is_array($data) || ($data['pm2_env']['status'] ?? '') != 'online') {
 			if (is_object($output)) {
 				$output->writeln(_('Stopped Calls and Contacts Panel'));
 			}

@@ -8,18 +8,24 @@ let ami: AMI;
 
 interface AmiConfig {
   port: number,
-  adminPassword: string,
+  user: string,
+  secret: string,
 }
 
-function parseManagerConf(raw: string): AmiConfig {
+export function parseManagerConf(raw: string): AmiConfig {
   const obj = ini.parse(raw);
-  const port = parseInt(obj['general']['port']);
-  const adminPassword = obj['admin']['secret'];
-  if (!port || !adminPassword)
-    throw new Error(`${TAG} asterisk manager config does not include required values: general->port, admin->secret`);
+  const port = parseInt(obj['general']?.['port'] ?? '');
+  // FreePBX 16+ generates a hashed manager username (not "admin"). Find the
+  // first non-general section that has a `secret` field — that's the AMI user.
+  const userSection = Object.keys(obj).find(
+    section => section !== 'general' && obj[section]?.['secret']
+  );
+  if (!port || !userSection)
+    throw new Error(`${TAG} asterisk manager config does not include required values: general->port, <user>->secret`);
   return {
     port,
-    adminPassword
+    user: userSection,
+    secret: obj[userSection]['secret'],
   };
 }
 
@@ -30,14 +36,14 @@ export async function initAmi() {
   ami = new AMI({
     port: managerConfig.port,
     host: '127.0.0.1',
-    login: 'admin',
-    password: managerConfig.adminPassword,
+    login: managerConfig.user,
+    password: managerConfig.secret,
     events: 'on',
     reconnect: true
   });
 
   await ami.connect();
-  console.log(TAG, 'asterisk manager interface connected');
+  console.log(TAG, `asterisk manager interface connected as ${managerConfig.user}`);
 }
 
 export function getAmi() {

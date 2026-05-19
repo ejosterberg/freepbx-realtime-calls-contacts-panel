@@ -1,6 +1,7 @@
 <?php
 if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }
-$callPanelUrl = 'http://'.$_SERVER['HTTP_HOST'].':'.($localconf['httpPort'] ? $localconf['httpPort'] : $defaultconf['httpPort']).'/callpanel';
+$httpPort = $localconf['httpPort'] ?? $defaultconf['httpPort'] ?? 4848;
+$callPanelUrl = 'http://'.$_SERVER['HTTP_HOST'].':'.$httpPort.'/callpanel';
 ?>
 
 <div style="
@@ -23,12 +24,12 @@ $callPanelUrl = 'http://'.$_SERVER['HTTP_HOST'].':'.($localconf['httpPort'] ? $l
 
 <hr style="margin: 1em;">
 
-<form 
-  onsubmit="(function(){document.getElementById('waitoverlay').style.display='flex';})()" 
-  class="fpbx-submit form-horizontal" 
-  name="frm_callpanel" 
-  action="" 
-  method="post" 
+<form
+  onsubmit="(function(){document.getElementById('waitoverlay').style.display='flex';})()"
+  class="fpbx-submit form-horizontal"
+  name="frm_callpanel"
+  action=""
+  method="post"
   role="form"
   style="position: relative;"
 >
@@ -52,7 +53,7 @@ $callPanelUrl = 'http://'.$_SERVER['HTTP_HOST'].':'.($localconf['httpPort'] ? $l
     align-items: center;
   ">Please wait...</div>
   <div class="form-group">
-    <label for="changeStatus" class="control-label col-xs-3">Service Status?</label> 
+    <label for="changeStatus" class="control-label col-xs-3">Service Status?</label>
     <div class="col-xs-9">
       <label class="radio-inline">
         <input type="radio" name="changeStatus" value="start">
@@ -92,45 +93,45 @@ $callPanelUrl = 'http://'.$_SERVER['HTTP_HOST'].':'.($localconf['httpPort'] ? $l
     </div>
   </div>
   <div class="form-group">
-    <label for="text" class="control-label col-xs-3">Caller ID Prefixes</label> 
+    <label for="text" class="control-label col-xs-3">Caller ID Prefixes</label>
     <div class="col-xs-9">
-      <input id="callerIdPrefixes" name="callerIdPrefixes" type="text" placeholder="<?php echo implode(",", $defaultconf['callerIdPrefixes'] ?? []) ?>" value="<?php echo implode(",", $localconf['callerIdPrefixes'] ?? []) ?>" class="form-control" aria-describedby="callerIdPrefixesHelpBlock"> 
+      <input id="callerIdPrefixes" name="callerIdPrefixes" type="text" placeholder="<?php echo implode(",", $defaultconf['callerIdPrefixes'] ?? []) ?>" value="<?php echo implode(",", $localconf['callerIdPrefixes'] ?? []) ?>" class="form-control" aria-describedby="callerIdPrefixesHelpBlock">
       <span id="callerIdPrefixesHelpBlock" class="help-block">Comma separated, e.g.: +4954321,054321, Default: <?php echo implode(",", $defaultconf['callerIdPrefixes'] ?? []) ?></span>
     </div>
   </div>
   <div class="form-group">
-    <label for="callerIdResolveLength" class="control-label col-xs-3">Caller ID Resolve Length</label> 
+    <label for="callerIdResolveLength" class="control-label col-xs-3">Caller ID Resolve Length</label>
     <div class="col-xs-9">
-      <input id="callerIdResolveLength" name="callerIdResolveLength" placeholder="<?php echo $defaultconf['callerIdResolveLength'] ?>" type="text" value="<?php echo $localconf['callerIdResolveLength'] ?>" class="form-control" aria-describedby="callerIdResolveLengthHelpBlock"> 
-      <span id="callerIdResolveLengthHelpBlock" class="help-block">Default: <?php echo $defaultconf['callerIdResolveLength'] ?></span>
+      <input id="callerIdResolveLength" name="callerIdResolveLength" placeholder="<?php echo $defaultconf['callerIdResolveLength'] ?? '' ?>" type="text" value="<?php echo $localconf['callerIdResolveLength'] ?? '' ?>" class="form-control" aria-describedby="callerIdResolveLengthHelpBlock">
+      <span id="callerIdResolveLengthHelpBlock" class="help-block">Default: <?php echo $defaultconf['callerIdResolveLength'] ?? '' ?></span>
     </div>
   </div>
   <div class="form-group">
-    <label for="httpPort" class="control-label col-xs-3">HTTP Port</label> 
+    <label for="httpPort" class="control-label col-xs-3">HTTP Port</label>
     <div class="col-xs-9">
-      <input id="httpPort" name="httpPort" placeholder="<?php echo $defaultconf['httpPort'] ?>" type="text" value="<?php echo $localconf['httpPort'] ?>" class="form-control" aria-describedby="httpPortHelpBlock"> 
-      <span id="httpPortHelpBlock" class="help-block">Default: <?php echo $defaultconf['httpPort'] ?></span>
+      <input id="httpPort" name="httpPort" placeholder="<?php echo $defaultconf['httpPort'] ?? '' ?>" type="text" value="<?php echo $localconf['httpPort'] ?? '' ?>" class="form-control" aria-describedby="httpPortHelpBlock">
+      <span id="httpPortHelpBlock" class="help-block">Default: <?php echo $defaultconf['httpPort'] ?? '' ?></span>
     </div>
   </div>
   <div class="form-group">
-    <label class="control-label col-xs-3" for="activeCallsCheckIntervalMs">Check for Active Calls Interval (ms)</label> 
+    <label class="control-label col-xs-3" for="activeCallsCheckIntervalMs">Check for Active Calls Interval (ms)</label>
     <div class="col-xs-9">
-      <input id="activeCallsCheckIntervalMs" name="activeCallsCheckIntervalMs" placeholder="<?php echo $defaultconf['activeCallsCheckIntervalMs'] ?>" type="text" value="<?php echo $localconf['activeCallsCheckIntervalMs'] ?>" class="form-control" aria-describedby="activeCallsCheckIntervalMsHelpBlock"> 
-      <span id="activeCallsCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['activeCallsCheckIntervalMs'] ?></span>
+      <input id="activeCallsCheckIntervalMs" name="activeCallsCheckIntervalMs" placeholder="<?php echo $defaultconf['activeCallsCheckIntervalMs'] ?? '' ?>" type="text" value="<?php echo $localconf['activeCallsCheckIntervalMs'] ?? '' ?>" class="form-control" aria-describedby="activeCallsCheckIntervalMsHelpBlock">
+      <span id="activeCallsCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['activeCallsCheckIntervalMs'] ?? '' ?></span>
     </div>
   </div>
   <div class="form-group">
-    <label for="callLogsCheckIntervalMs" class="control-label col-xs-3">Check for Call Logs Interval (ms)</label> 
+    <label for="callLogsCheckIntervalMs" class="control-label col-xs-3">Check for Call Logs Interval (ms)</label>
     <div class="col-xs-9">
-      <input id="callLogsCheckIntervalMs" name="callLogsCheckIntervalMs" placeholder="<?php echo $defaultconf['callLogsCheckIntervalMs'] ?>" type="text" value="<?php echo $localconf['callLogsCheckIntervalMs'] ?>" class="form-control" aria-describedby="callLogsCheckIntervalMsHelpBlock"> 
-      <span id="callLogsCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['callLogsCheckIntervalMs'] ?></span>
+      <input id="callLogsCheckIntervalMs" name="callLogsCheckIntervalMs" placeholder="<?php echo $defaultconf['callLogsCheckIntervalMs'] ?? '' ?>" type="text" value="<?php echo $localconf['callLogsCheckIntervalMs'] ?? '' ?>" class="form-control" aria-describedby="callLogsCheckIntervalMsHelpBlock">
+      <span id="callLogsCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['callLogsCheckIntervalMs'] ?? '' ?></span>
     </div>
   </div>
   <div class="form-group">
-    <label for="phonebookCheckIntervalMs" class="control-label col-xs-3">Check for externally changed Phonebook Entries Interval (ms)</label> 
+    <label for="phonebookCheckIntervalMs" class="control-label col-xs-3">Check for externally changed Phonebook Entries Interval (ms)</label>
     <div class="col-xs-9">
-      <input id="phonebookCheckIntervalMs" name="phonebookCheckIntervalMs" placeholder="<?php echo $defaultconf['phonebookCheckIntervalMs'] ?>" type="text" value="<?php echo $localconf['phonebookCheckIntervalMs'] ?>" class="form-control" aria-describedby="phonebookCheckIntervalMsHelpBlock"> 
-      <span id="phonebookCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['phonebookCheckIntervalMs'] ?></span>
+      <input id="phonebookCheckIntervalMs" name="phonebookCheckIntervalMs" placeholder="<?php echo $defaultconf['phonebookCheckIntervalMs'] ?? '' ?>" type="text" value="<?php echo $localconf['phonebookCheckIntervalMs'] ?? '' ?>" class="form-control" aria-describedby="phonebookCheckIntervalMsHelpBlock">
+      <span id="phonebookCheckIntervalMsHelpBlock" class="help-block">Default: <?php echo $defaultconf['phonebookCheckIntervalMs'] ?? '' ?></span>
     </div>
-  </div> 
+  </div>
 </form>
