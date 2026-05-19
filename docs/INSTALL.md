@@ -151,14 +151,18 @@ naming) with:
 
 ```apache
 # Calls + Contacts Panel reverse proxy
-RewriteEngine On
+# Scoped to /callpanel/ so other vhost config isn't affected.
+# WebSocket upgrade detected via the Upgrade header (works for both
+# socket.io polling+upgrade transport and direct websocket transport).
 
-# WebSocket upgrade (must come BEFORE the plain HTTP rule)
-RewriteCond %{REQUEST_URI}  ^/callpanel [NC]
-RewriteCond %{QUERY_STRING} transport=websocket [NC]
-RewriteRule ^/(.*) ws://127.0.0.1:4848/$1 [P,L]
+<LocationMatch "^/callpanel/">
+  RewriteEngine On
+  RewriteCond %{HTTP:Upgrade}    websocket [NC]
+  RewriteCond %{HTTP:Connection} upgrade   [NC]
+  RewriteRule .* "ws://127.0.0.1:4848%{REQUEST_URI}" [P,L]
+</LocationMatch>
 
-# Plain HTTP proxy
+# Plain HTTP proxy (used for polling fallback + static assets)
 ProxyPass        /callpanel/ http://127.0.0.1:4848/callpanel/
 ProxyPassReverse /callpanel/ http://127.0.0.1:4848/callpanel/
 ```
@@ -177,6 +181,14 @@ sudo systemctl reload httpd
 
 Now you can reach the panel at `http://<your-freepbx-host>/callpanel/`
 (no port number).
+
+**Verified end-to-end** on Debian 12 + Apache 2.4: HTTP, WebSocket
+upgrade, AND polling-transport fallback all work through this snippet
+(as of v17.0.3). Older versions of these docs used a query-string-based
+WebSocket detection (`RewriteCond %{QUERY_STRING} transport=websocket`)
+which fails because mod_proxy_http consumes the request before the
+rewrite fires — if you're following an older guide that uses that
+pattern, switch to the `Upgrade`-header pattern above.
 
 ## Installation — alternative paths
 

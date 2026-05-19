@@ -13,8 +13,6 @@ to English.
 | `es` | Spanish (Español) | This fork — machine-assisted | ❌ Not yet — needs native review |
 | `fr` | French (Français) | This fork — machine-assisted | ❌ Not yet — needs native review |
 | `it` | Italian (Italiano) | This fork — machine-assisted | ❌ Not yet — needs native review |
-| `pt-BR` | Portuguese — Brazilian | This fork — machine-assisted | ❌ Not yet — needs native review |
-| `nl` | Dutch (Nederlands) | This fork — machine-assisted | ❌ Not yet — needs native review |
 
 **About the machine-assisted translations:** these are first-pass
 translations produced with AI assistance against the canonical
@@ -31,7 +29,7 @@ If you spot a translation that's off, please open a PR or issue at
 ## Adding a new language
 
 1. Create a new directory with the BCP-47 language tag (e.g. `pl`,
-   `ru`, `zh-CN`)
+   `ru`, `zh-CN`, `pt-BR`, `nl`)
 2. Copy `en/translation.json` into it
 3. Translate every value, keeping every key identical
 4. **Important:** preserve interpolation tokens exactly as-is:
@@ -55,16 +53,3 @@ If you spot a translation that's off, please open a PR or issue at
   translates the term.
 - **`{{val, datetime}}` and other interpolation tokens**: NEVER
   modify. Copy verbatim from English.
-
-## Why these locales were chosen for the first machine-assist pass
-
-- **Spanish** — largest LatAm + Spain PBX user base
-- **French** — Sangoma has French-Canadian + EU French presence
-- **Italian** — Sangoma's Italian community is active
-- **Brazilian Portuguese** — Brazil is one of the biggest FreePBX
-  markets globally
-- **Dutch** — common in EU SMB telecom installs
-
-Other priorities for future passes: Polish, Russian, Chinese
-(Simplified), Japanese, Arabic. Open a PR if you can contribute
-any of these.
