@@ -29,7 +29,10 @@ jobs:
         run: |
           # FreePBX expects the tarball to extract into a directory named
           # after the rawname. Use --transform so the archive root is "callpanel/".
-          TARBALL="callpanel-${{ steps.ver.outputs.version }}.tgz"
+          # Write to /tmp/ (NOT the working dir — tar would otherwise see
+          # its own output file change mid-archive and abort with
+          # "file changed as we read it").
+          TARBALL="/tmp/callpanel-${{ steps.ver.outputs.version }}.tgz"
           tar --exclude='./.git' \
               --exclude='./.github' \
               --exclude='./specs' \
