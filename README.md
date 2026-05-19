@@ -44,54 +44,52 @@ official FreePBX Distro for v16) is untested but should work.
 ![](./screenshots/contactviewer.png)
 ![](./screenshots/contacteditor.png)
 
-## Install
+## Quick install
 
-### Prerequisites
+For the full guide with prerequisites, troubleshooting, and Apache
+reverse-proxy setup, see [docs/INSTALL.md](docs/INSTALL.md). The short
+version:
 
-These FreePBX modules must be installed first (Module Admin):
+```bash
+# Make sure FreePBX dependency modules are installed first:
+sudo fwconsole ma downloadinstall contactmanager cidlookup pm2 userman
+sudo fwconsole reload
 
-- `contactmanager` ≥ 16.0.17
-- `cidlookup` ≥ 16.0.5
-- `pm2` ≥ 13.0.3.8
+# Download + install the panel:
+cd /tmp
+sudo wget https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/latest/download/callpanel-17.0.1.tgz
+sudo tar -xzf callpanel-17.0.1.tgz -C /var/www/html/admin/modules/
+sudo chown -R asterisk:asterisk /var/www/html/admin/modules/callpanel
+sudo fwconsole ma install callpanel -f
+sudo fwconsole reload
+```
 
-Plus Node.js ≥ 18 on the host (FreePBX 17's `pm2` module bundles a
-compatible Node; for FreePBX 16, install Node 18+ from NodeSource).
+First install takes **5–10 minutes** — the install method does
+`npm ci` + builds backend + builds frontend.
 
-### Steps
-
-1. Download the latest release tarball:
-   `https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/latest`
-2. FreePBX → Admin → Module Admin → Upload Modules → Upload Local
-3. Select the tarball and click **Install**
-4. **Apply Config** (be patient — the first install runs `npm ci` and
-   builds both backend and frontend; this can take 5–10 minutes on a
-   modest VM)
-5. FreePBX → Admin → **Calls + Contacts Panel** to verify status
+Then browse to **`http://<your-freepbx-host>:4848/callpanel/`** and log
+in with FreePBX User Manager credentials. See
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md) for what permissions
+the user needs.
 
 ![](./screenshots/fpbxadminview.png)
 
-### Access the panel
+## Documentation
 
-The backend serves the React frontend on port **4848** by default:
+| Doc | What's in it |
+|---|---|
+| [docs/INSTALL.md](docs/INSTALL.md) | Step-by-step install, prerequisites, Apache reverse-proxy, alternative install paths, uninstall |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Admin UI walkthrough, every setting explained, access control, network security |
+| [docs/USAGE.md](docs/USAGE.md) | End-user guide — logging in, viewing calls, managing contacts, making calls, CSV import, caller ID matching |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Where logs live, diagnostic commands, common problems and fixes |
+| [docs/UPGRADE.md](docs/UPGRADE.md) | Upgrade procedure, automation script, downgrade path |
+| [docs/PROVISIONING-YEALINK.md](docs/PROVISIONING-YEALINK.md) | Point a Yealink IP phone at the phonebook XML |
+| [docs/PROVISIONING-FANVIL.md](docs/PROVISIONING-FANVIL.md) | Point a Fanvil IP phone at the phonebook XML |
+| [docs/FAQ.md](docs/FAQ.md) | Compatibility, features, performance, security, licensing |
+| [CHANGELOG.md](CHANGELOG.md) | Per-release changes |
+| [CHANGES.md](CHANGES.md) | Delta from upstream (per AGPL §5(a)) |
 
-```
-http://<your-freepbx-host>:4848/callpanel/
-```
-
-To put it behind FreePBX's Apache (so it shares port 80/443), add a
-reverse-proxy snippet to `/etc/apache2/conf-enabled/freepbx.conf`:
-
-```apache
-ProxyPass        /callpanel/ http://127.0.0.1:4848/callpanel/
-ProxyPassReverse /callpanel/ http://127.0.0.1:4848/callpanel/
-RewriteCond %{REQUEST_URI} ^/callpanel [NC]
-RewriteCond %{QUERY_STRING} transport=websocket [NC]
-RewriteRule ^/(.*) ws://127.0.0.1:4848/$1 [P,L]
-```
-
-Then `a2enmod proxy proxy_http proxy_wstunnel rewrite && systemctl reload apache2`.
-
-## Advanced usage
+## Quick reference
 
 **Phonebook URLs** (for IP phone provisioning):
 
