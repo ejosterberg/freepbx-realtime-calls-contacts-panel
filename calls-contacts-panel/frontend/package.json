@@ -2,6 +2,7 @@
   "name": "freepbx-realtime-calls-contacts-panel-frontend",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "homepage": "/callpanel/",
   "dependencies": {
     "@fontsource/inter": "^4.5.1",

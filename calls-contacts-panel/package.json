@@ -4,7 +4,7 @@
   "description": "Realtime Calls and Contacts Panel for FreePBX including phonebook generation and other utils.",
   "main": "build/src/main.js",
   "engines": {
-    "node": ">= 16.13"
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "@types/app-root-path": "^1.2.4",
@@ -36,7 +36,6 @@
     "dev": "NODE_ENV=development ts-node src/main.ts",
     "dev:service": "NODE_ENV=development nodemon src/main.ts run-as-service",
     "dev:service:build": "NODE_ENV=development nodemon --watch build/src build/src/main.js run-as-service",
-    "prebuild": "npm run lint",
     "build": "tsc",
     "build:watch": "tsc -w",
     "lint": "eslint . --ext .ts,.tsx",
@@ -48,7 +47,7 @@
     "url": "git+https://github.com/adroste/freepbx-realtime-calls-contacts-panel.git"
   },
   "author": "Alexander Droste",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/adroste/freepbx-realtime-calls-contacts-panel/issues"
   },

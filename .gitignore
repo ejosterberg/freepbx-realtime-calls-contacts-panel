@@ -24,3 +24,6 @@ coverage
 
 # Misc
 .DS_Store
+
+# Local AI tooling state (not for upstream)
+.claude/
