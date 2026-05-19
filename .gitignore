@@ -26,4 +26,4 @@ coverage
 .DS_Store
 
 # Local AI tooling state (not for upstream)
-.claude/
+.claude/.scannerwork/

@@ -87,6 +87,31 @@ differences cannot be reconciled cleanly.
   behavior.
 - **`/quality-gate`** runs the full sweep — invoke before any release.
 
+### §5a — Ship verification (added 2026-05-19)
+
+"Shipped" is not done until the post-push state is verified:
+
+1. `gh run list --workflow=release.yml --limit 5` — every recent run is
+   `success` or `pending`. **A `failure` entry blocks "shipped" status
+   even if a later run passed** — delete the failure or add a release
+   note explaining; don't leave silent failures on the Actions tab.
+2. `gh release view <latest-tag>` — assets present, body looks right.
+3. **SonarQube scan** — run per `~/.claude/sonarqube-playbook.md`. The
+   server is up at http://10.32.161.205:9000 and the project should be
+   tracked there. New BLOCKERS / CRITICAL must be triaged before
+   declaring "shipped".
+4. **`npm audit` on both** `calls-contacts-panel/` and
+   `calls-contacts-panel/frontend/`. Critical CVEs must be addressed
+   before "shipped"; high/moderate can be flagged for follow-up but
+   must be flagged explicitly, never silently ignored.
+5. **Smoke install from the actual release URL** on a sandbox VM —
+   confirms the published tarball (not your local working copy)
+   installs end-to-end.
+
+If any of these fail, the work is in-progress, not shipped. Updating
+[CHANGELOG.md](../CHANGELOG.md) with "shipped" before all five pass is
+a discipline violation.
+
 ## §6 — Spec-driven workflow
 
 Every non-trivial change gets a `specs/phase-NN-<slug>/` directory with

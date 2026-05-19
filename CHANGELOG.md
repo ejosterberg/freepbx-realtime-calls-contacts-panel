@@ -10,23 +10,80 @@ see [CHANGES.md](CHANGES.md).
 
 ## [Unreleased]
 
+## [17.0.2] — 2026-05-19
+
+### Security
+
+- **Cleared all critical CVEs.** Runtime deps bumped to clear:
+  - **mysql2 RCE** ([GHSA-fpw7-j2hg-69v5](https://github.com/advisories/GHSA-fpw7-j2hg-69v5),
+    CVSS 9.8) — was `mysql2@2.3.3`, now `mysql2@^3.11.0`
+  - **socket.io-parser injection** ([GHSA-qm95-pgcg-qqfq](https://github.com/advisories/GHSA-qm95-pgcg-qqfq),
+    CVSS 9.8) on both backend and frontend — was `socket.io@4.4.0` and
+    `socket.io-client@4.4.1`, now both `^4.8.0`
+- Net change in `npm audit` totals: backend `55 → 21` vulnerabilities
+  (5 critical → **0**); frontend `86 → 30` (7 critical → **0**).
+  Remaining high/moderate are dev/build transitives in jest 27 +
+  react-scripts 5 — not in runtime artifact. See [security audit v2](specs/security/audit-2026-05-19-v2.md).
+- Removed unused `axios@0.24.0` dependency from both backend and
+  frontend (was a leftover, not imported anywhere).
+
 ### Added
 
-- Detailed documentation suite under `docs/`:
+- **Detailed documentation suite** under `docs/`:
   [INSTALL.md](docs/INSTALL.md), [CONFIGURATION.md](docs/CONFIGURATION.md),
   [USAGE.md](docs/USAGE.md), [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md),
   [UPGRADE.md](docs/UPGRADE.md),
   [PROVISIONING-YEALINK.md](docs/PROVISIONING-YEALINK.md),
   [PROVISIONING-FANVIL.md](docs/PROVISIONING-FANVIL.md),
   [FAQ.md](docs/FAQ.md)
+- **SonarQube project tracking** at
+  [10.32.161.205:9000/dashboard?id=freepbx-callpanel](http://10.32.161.205:9000/dashboard?id=freepbx-callpanel).
+  Initial scan: 0 vulnerabilities (A rating), 6 security hotspots
+  (manual review), 4 bugs (2 fixed in this release), 103 code smells
+  (all minor).
+- **Improvements roadmap** at
+  [specs/phase-05-modernization/IMPROVEMENTS.md](specs/phase-05-modernization/IMPROVEMENTS.md)
+  — 18 cataloged improvements with effort estimates.
+
+### Changed
+
+- TypeScript bumped from `~4.5.3` to `~4.9.5` (newer @types/* require
+  newer TS to parse).
+- Backend `express` bumped from `^4.17.2` to `^4.21.0` (security
+  patches in 4.18+).
+- Backend `bcrypt` bumped from `^5.0.1` to `^5.1.1` (minor security).
+- Frontend `react-scripts` pinned to `^5.0.1` (was `^5.0.0`).
 
 ### Fixed
 
-- Security audit note F-03 was incorrect (claimed single shared
+- **2 SonarQube-flagged bugs** in `Callpanel.class.php`:
+  - Line 337: referenced undefined `$command` variable in error path
+    (inherited from upstream)
+  - Line 383: referenced undefined `$process` variable in error path
+    (inherited from upstream)
+- **2 SonarQube-flagged code smells:** added `public` visibility
+  modifier on `readConfig()` and `saveConfig()` in
+  `Callpanel.class.php`.
+- **Frontend TypeScript error** in `ContactEditor.tsx:273`: missing
+  optional chain (`errors.phoneNumbers?.[0].number` → `?.[0]?.number`).
+  Surfaced by the TS 4.9 upgrade; was a latent null-deref under TS 4.5
+  too but the older compiler didn't catch it.
+- **Security audit note F-03** was incorrect (claimed single shared
   password). Auth actually delegates to FreePBX User Manager
   (`userman_users`) with bcrypt verification + module permission
-  check (`pbx_admin` or `pbx_modules` containing `cdr` +
-  `contactmanager`). Audit doc updated.
+  check. Original audit doc updated; v2 audit doc supersedes.
+
+### Ship discipline note
+
+This release exists because v17.0.1 was declared "shipped" without
+running available quality tooling (`npm audit`, SonarQube). When run
+after the fact, the audit found 12 critical CVEs in the released
+artifact. The discipline change is documented in
+[specs/constitution.md §5a](specs/constitution.md#5a--ship-verification-added-2026-05-19)
+— every future release must verify CI + audit results + scan before
+the "shipped" claim.
+
+## [17.0.1] — 2026-05-19
 
 ## [17.0.1] — 2026-05-19
 
@@ -132,6 +189,7 @@ For changes prior to this fork (upstream v16.0.0 by Alexander
 Droste, released 2022-01-15), see the
 [upstream repo](https://github.com/adroste/freepbx-realtime-calls-contacts-panel).
 
-[Unreleased]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/compare/v17.0.1...HEAD
+[Unreleased]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/compare/v17.0.2...HEAD
+[17.0.2]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.2
 [17.0.1]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.1
 [17.0.0]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.0
