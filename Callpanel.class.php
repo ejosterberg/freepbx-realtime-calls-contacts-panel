@@ -332,10 +332,7 @@ class Callpanel implements \BMO
 				if (is_object($output)) {
 					$output->write(
 						'<error>' .
-							sprintf(
-								_("Failed to run: '%s'") . '</error>',
-								$command
-							)
+							_("Failed to start Calls and Contacts Panel") . '</error>'
 					);
 				}
 				break;
@@ -377,11 +374,7 @@ class Callpanel implements \BMO
 			if (is_object($output)) {
 				$output->writeln(
 					'<error>' .
-						sprintf(
-							_('Calls and Contacts Panel Failed: %s') .
-								'</error>',
-							$process->getErrorOutput()
-						)
+						_('Calls and Contacts Panel failed to stop') . '</error>'
 				);
 			}
 			return false;
@@ -390,7 +383,7 @@ class Callpanel implements \BMO
 		return true;
 	}
 
-	function readConfig()
+	public function readConfig()
 	{
 		$defaultStr = file_get_contents($this->nodeloc . '/config.default.json');
 		if ($defaultStr === false) {
@@ -415,7 +408,7 @@ class Callpanel implements \BMO
 		return ['default' => $defaultconf, 'local' => $localconf];
 	}
 
-	function saveConfig($localconf) {
+	public function saveConfig($localconf) {
 		if (empty($localconf)) {
 			$json = '{}';
 		} else {

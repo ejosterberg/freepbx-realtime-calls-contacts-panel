@@ -270,7 +270,7 @@ export function ContactEditor({
                     <input {...register(`phoneNumbers.${index}.number`, { required: index === 0 })} type="tel"
                       className={`
                         flex-1 text-gray-900 rounded-sm text-sm focus:ring-sky-500 focus:border-sky-500 border-gray-300
-                        ${index === 0 && errors.phoneNumbers?.[0].number && 'border-red-600 bg-red-50'}
+                        ${index === 0 && errors.phoneNumbers?.[0]?.number && 'border-red-600 bg-red-50'}
                         ${addPhoneNumber && field.number === addPhoneNumber && 'border-green-600 bg-green-50'}
                       `}
                     />
