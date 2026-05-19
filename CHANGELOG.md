@@ -10,6 +10,16 @@ see [CHANGES.md](CHANGES.md).
 
 ## [Unreleased]
 
+### Added
+
+- **5 new UI languages** (machine-assisted first-pass translations,
+  pending native review): Spanish (`es`), French (`fr`), Italian (`it`),
+  Brazilian Portuguese (`pt-BR`), Dutch (`nl`). Brings total supported
+  languages from 2 (English, German) to 7. See
+  [`frontend/public/locales/README.md`](calls-contacts-panel/frontend/public/locales/README.md)
+  for translation status table + contribution guide.
+- Updates the README's compat/feature table accordingly.
+
 ## [17.0.2] — 2026-05-19
 
 ### Security

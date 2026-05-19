@@ -165,11 +165,20 @@ Currently all panel users see all data.
 install method could detect Apache and offer to write the snippet
 automatically (with a confirmation prompt during `fwconsole ma install`).
 
-### I-16 — Increase i18n coverage
+### I-16 — Increase i18n coverage ✅ partially done (Unreleased)
 **Severity:** Very Low
-**Effort:** Per-language
-**Current:** English + German
-**Wanted:** Spanish, French, Italian (common Sangoma markets)
+**Effort:** Per-language — turned out to be ~5 min per language for
+machine-assisted translation (62 short keys total)
+**Current:** English, German, Spanish, French, Italian,
+Brazilian Portuguese, Dutch
+**Wanted:** Polish, Russian, Chinese (Simplified), Japanese,
+Arabic, European Portuguese, Catalan
+**Status:** Machine-assisted translations for es/fr/it/pt-BR/nl
+shipped pending native-speaker review. Track quality issues at
+[github issues](https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/issues)
+with the `i18n` label.
+
+**Lesson learned:** original estimate was "Very Low priority / per-language effort". The actual mechanical work was tiny (62 short keys). The HARD part is native-quality review, which can be crowdsourced post-ship via PRs. Don't conflate the two efforts when rating priority.
 
 ### I-17 — Per-feature ACLs in FreePBX User Manager
 **Severity:** Low

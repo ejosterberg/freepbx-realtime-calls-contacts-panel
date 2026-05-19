@@ -32,7 +32,7 @@ official FreePBX Distro for v16) is untested but should work.
 - **Contact Management** — wraps FreePBX ContactManager; create/edit/delete
   with a modern UI; save unknown numbers from call logs as new contacts
 - **Click-to-call** — originate calls from any extension to any number
-- **i18n** — English, German; new languages straightforward to add
+- **i18n** — English, German, Spanish, French, Italian, Brazilian Portuguese, Dutch (machine-assisted translations for new languages; native review welcome)
 - **Phonebook generation** — produces Yealink and Fanvil compatible XMLs
 - **PM2-managed backend service** — managed via FreePBX's `pm2` module
 
