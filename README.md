@@ -1,42 +1,40 @@
 # FreePBX Realtime Calls & Contacts Panel
 
-This is a module for FreePBX.
-It is a realtime panel to view and manage calls and contacts.
+A realtime web panel for FreePBX to view active calls, browse call logs,
+and manage contacts.
 
-Suited for use at Home and Small Businesses.
+Suited for use at home and small businesses.
 
-Compatible and tested on FreePBX version: **16.0.x**
+> **Fork notice — read this if you're coming from upstream.** This is a
+> maintained fork of [adroste/freepbx-realtime-calls-contacts-panel][upstream]
+> (upstream was archived 2022-01-15). This fork adds **FreePBX 17
+> compatibility** alongside the original FreePBX 16 support, fixes the
+> install-time build step that upstream omitted, and patches PHP 8.x
+> warnings. See [CHANGES.md](CHANGES.md) for the full delta.
 
-Written in NodeJS, React and PHP (only glue).
+[upstream]: https://github.com/adroste/freepbx-realtime-calls-contacts-panel
+
+## Compatibility
+
+| FreePBX | Asterisk | PHP | Node | Status |
+|---|---|---|---|---|
+| **17.0** | 22.x | 8.2 | 18+ | ✅ Supported (this fork) |
+| **16.0** | 18.x / 20.x | 7.4 | 18+ | ✅ Supported (original target) |
+
+Tested on Debian 12 (bookworm) for both FreePBX versions. SNG7 (the
+official FreePBX Distro for v16) is untested but should work.
 
 ## Features
 
-* **Realtime Call Monitoring**
-  * View Active Calls (Incoming/Outgoing)
-  * View Call Logs
-* **Better CallerID Lookup**
-  * CallerID for Incoming and Outgoing Calls
-  * Integrates with CallerID Lookup Module 
-    * Custom Lookup Rest Endpoint
-    * Can match Numbers with and without custom area codes
-* **Better Contact Management**
-  * Integrates with FreePBX ContactManager
-  * Create/Update/Delete Contacts with beautiful UI
-  * Save unknown Numbers from Call Logs directly as new Contacts
-  * Add unknown Numbers from Calls Logs directly to already existing Contacts (via a Search feature)
-* **Start Calls directly from the browser from any extension (or ring group) to any number**
-* **Beautiful UI (React + NodeJS)**
-* **Multi-Language Support**
-  * supported Languages (yet): English 🇺🇸🇬🇧, German (Deutsch) 🇩🇪 
-  * new languages can be added easily
-* **Automatic Phonebook Generation**
-  * generates IP phone compatible phonebooks (including multiple saved phone numbers per contact)
-  * supported manufacturers (yet): yealink, fanvil 
-* **FreePBX Module Wrapper**
-  * Easy install via FreePBX Module Admin
-  * Uses PM2 Module to run the backend service
-  * Administration View in FreePBX to configure the panel
-
+- **Realtime Call Monitoring** — active calls + call logs
+- **Better CallerID Lookup** — integrates with FreePBX CallerID Lookup;
+  custom REST endpoint; matches numbers with/without area codes
+- **Contact Management** — wraps FreePBX ContactManager; create/edit/delete
+  with a modern UI; save unknown numbers from call logs as new contacts
+- **Click-to-call** — originate calls from any extension to any number
+- **i18n** — English, German; new languages straightforward to add
+- **Phonebook generation** — produces Yealink and Fanvil compatible XMLs
+- **PM2-managed backend service** — managed via FreePBX's `pm2` module
 
 ## Screenshots
 
@@ -46,90 +44,157 @@ Written in NodeJS, React and PHP (only glue).
 ![](./screenshots/contactviewer.png)
 ![](./screenshots/contacteditor.png)
 
-# Install
+## Install
 
-1. Go to FreePBX -> Admin -> Module Admin -> Upload Modules
-2. Upload the latest version of the module (tar.gz)
-   1. link to latest version: https://github.com/adroste/freepbx-realtime-calls-contacts-panel/archive/main.tar.gz
-3. Install it and reload FreePBX (Apply Config)
-4. Go to FreePBX -> Admin -> Calls + Contacts Panel
+### Prerequisites
+
+These FreePBX modules must be installed first (Module Admin):
+
+- `contactmanager` ≥ 16.0.17
+- `cidlookup` ≥ 16.0.5
+- `pm2` ≥ 13.0.3.8
+
+Plus Node.js ≥ 18 on the host (FreePBX 17's `pm2` module bundles a
+compatible Node; for FreePBX 16, install Node 18+ from NodeSource).
+
+### Steps
+
+1. Download the latest release tarball:
+   `https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/latest`
+2. FreePBX → Admin → Module Admin → Upload Modules → Upload Local
+3. Select the tarball and click **Install**
+4. **Apply Config** (be patient — the first install runs `npm ci` and
+   builds both backend and frontend; this can take 5–10 minutes on a
+   modest VM)
+5. FreePBX → Admin → **Calls + Contacts Panel** to verify status
 
 ![](./screenshots/fpbxadminview.png)
 
+### Access the panel
 
-## Advanced Usage
+The backend serves the React frontend on port **4848** by default:
 
-* Phonebook URLs:
-  * Fanvil: http://myfreepbx:4848/callpanel/fanvil-phonebook.xml
-  * Yealink: http://myfreepbx:4848/callpanel/yealink-phonebook.xml
-* Caller ID Lookup:
-  * You can add custom area codes to the configuration to improve lookup of numbers. 
-    * Go to FreePBX -> Admin -> Calls + Contacts Panel -> Caller ID Prefixes and add your area codes like "+491234,01234".
-    * E.g. if you saved a number without the area code and the incoming caller id includes it, it will match and if you saved a number with area code and the incoming caller id does not include it, it will also match.
-  * Create a CallerID Lookup Source like:
+```
+http://<your-freepbx-host>:4848/callpanel/
+```
+
+To put it behind FreePBX's Apache (so it shares port 80/443), add a
+reverse-proxy snippet to `/etc/apache2/conf-enabled/freepbx.conf`:
+
+```apache
+ProxyPass        /callpanel/ http://127.0.0.1:4848/callpanel/
+ProxyPassReverse /callpanel/ http://127.0.0.1:4848/callpanel/
+RewriteCond %{REQUEST_URI} ^/callpanel [NC]
+RewriteCond %{QUERY_STRING} transport=websocket [NC]
+RewriteRule ^/(.*) ws://127.0.0.1:4848/$1 [P,L]
+```
+
+Then `a2enmod proxy proxy_http proxy_wstunnel rewrite && systemctl reload apache2`.
+
+## Advanced usage
+
+**Phonebook URLs** (for IP phone provisioning):
+
+- Fanvil: `http://<host>:4848/callpanel/fanvil-phonebook.xml`
+- Yealink: `http://<host>:4848/callpanel/yealink-phonebook.xml`
+
+**Caller ID prefixes** — go to FreePBX → Admin → Calls + Contacts Panel →
+Caller ID Prefixes and add area codes like `+491234,01234`. Numbers
+saved with or without the area code will both match incoming caller IDs.
+
+**Caller ID Lookup source** — create a CallerID Lookup Source like this:
 
 ![](./screenshots/calleridlookupsource.png)
 
 ---
+
+# License
+
+**AGPL-3.0-only** — inherited from upstream. See [LICENSE](LICENSE)
+and [CHANGES.md](CHANGES.md). Derivatives must remain AGPLv3; if you
+run this as a network service for users beyond yourself, §13 requires
+offering source to those users.
+
 ---
 
-# Development hints
+# Development
 
 ## Project structure
 
 ```
-.                                  --- FreePBX Module Wrapper (Root Dir + Files)
-├── Callpanel.class.php
-├── LICENSE
-├── README.md
-├── calls-contacts-panel        --- Backend / Service (The Real App)
-│   ├── LICENSE
-│   ├── build
-│   ├── config.default.json
-│   ├── config.dev.json
-│   ├── config.local.json
-│   ├── dev-resources
-│   ├── frontend               --- Frontend (React Panel)
-│   ├── jest.config.js        
-│   ├── node_modules          
-│   ├── package-lock.json     
-│   ├── package.json          
-│   ├── src                   
-│   ├── tsconfig.eslint.json  
-│   └── tsconfig.json         
-├── install.php
-├── module.xml
-├── page.callpanel.php
-├── uninstall.php
-└── views
-    └── main.php
+.                                  --- FreePBX module wrapper (root dir + files)
+├── Callpanel.class.php            --- BMO class (PHP glue to FreePBX)
+├── LICENSE                        --- AGPLv3
+├── CHANGES.md                     --- modifications from upstream (per AGPL §5(a))
+├── README.md                      --- this file
+├── module.xml                     --- FreePBX module manifest
+├── install.php / uninstall.php    --- module lifecycle stubs
+├── page.callpanel.php             --- entry point for the admin view
+├── specs/                         --- spec-driven workflow (planning artifacts)
+├── views/main.php                 --- admin config page UI
+├── screenshots/                   --- README images
+└── calls-contacts-panel           --- the actual app (NodeJS + React)
+    ├── LICENSE                    --- AGPLv3
+    ├── package.json               --- backend (TypeScript + Express + socket.io)
+    ├── pm2.config.js              --- PM2 process descriptor
+    ├── config.default.json
+    ├── src                        --- backend source
+    └── frontend                   --- React frontend (Tailwind + i18next)
+        ├── package.json
+        └── src
 ```
 
-## Adding a Language
+## Adding a language
 
-* Go to `calls-contacts-panel/frontend/public/locales`
-* Create a new folder with the desired language tag, e.g. `de`, `en`, `fr` etc.
-* Copy the `en/translation.json` to the new folder and translate the values
-* Rebuild the app and test the translation.
-* Make a pull request so that I can add the language to this repo.
+1. `cd calls-contacts-panel/frontend/public/locales`
+2. Create a new folder with the BCP-47 tag (e.g. `fr`, `es`, `it`)
+3. Copy `en/translation.json` into it and translate
+4. Rebuild the frontend (`npm run build`) — open a PR
 
-## Dev Environment
+## Dev environment
 
 ### Backend
 
-* Forward ports 3306 (MySQL) and 5038 (AMI: Asterisk Manager Interface) to your dev machine, e.g. using ssh:
+Forward MySQL (3306) and Asterisk AMI (5038) from your FreePBX instance
+to your dev machine:
+
 ```bash
 ssh -L 3306:127.0.0.1:3306 \
-  -L 5038:127.0.0.1:5038 \
-  root@yourFreePBXInstance
+    -L 5038:127.0.0.1:5038 \
+    root@your-freepbx
 ```
-* Open the `calls-contacts-panel` folder as workspace in VS Code.
-* Create a `dev-resources` folder and copy the files `/etc/freepbx.conf` and `/etc/asterisk/manager.conf` from your FreePBX instance into it.
-* Install deps with `npm install`
-* Start service via `npm run dev:service` (ts-node), alternatively you can use `npm run build:watch` and `npm run dev:service:build`
-  
+
+Then:
+
+```bash
+cd calls-contacts-panel
+mkdir -p dev-resources
+scp root@your-freepbx:/etc/freepbx.conf dev-resources/
+scp root@your-freepbx:/etc/asterisk/manager.conf dev-resources/
+npm install
+npm run dev:service           # ts-node directly
+# or
+npm run build:watch &         # tsc -w
+npm run dev:service:build     # nodemon on build/
+```
+
 ### Frontend
 
-* Open the `calls-contacts-panel/frontend` folder as workspace in VS Code.
-* Install deps with `npm install`
-* Start react-scripts with `npm run start`
+```bash
+cd calls-contacts-panel/frontend
+npm install
+npm run start                 # react-scripts dev server on :3000
+```
+
+## Specs (spec-kit workflow)
+
+This project follows a spec-driven workflow — see [specs/README.md](specs/README.md).
+Read `specs/constitution.md` first, then `specs/current-state.md` and
+`specs/handoff.md` before making changes.
+
+# Credits
+
+- Original module: **Alexander Droste** (adroste) — 2021–2022
+- Fork maintainer: **Eric Osterberg** (ejosterberg) — 2026–
+
+See [CHANGES.md](CHANGES.md) for the full modification history.

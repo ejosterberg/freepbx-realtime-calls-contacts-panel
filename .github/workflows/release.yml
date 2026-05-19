@@ -1,0 +1,68 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build module tarball + create release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: ver
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          [ -z "$VERSION" ] && VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Build module tarball
+        run: |
+          # FreePBX expects the tarball to extract into a directory named
+          # after the rawname. Use --transform so the archive root is "callpanel/".
+          TARBALL="callpanel-${{ steps.ver.outputs.version }}.tgz"
+          tar --exclude='./.git' \
+              --exclude='./.github' \
+              --exclude='./specs' \
+              --exclude='./calls-contacts-panel/node_modules' \
+              --exclude='./calls-contacts-panel/build' \
+              --exclude='./calls-contacts-panel/frontend/node_modules' \
+              --exclude='./calls-contacts-panel/frontend/build' \
+              --transform 's,^\./,callpanel/,' \
+              -czf "$TARBALL" .
+          ls -lh "$TARBALL"
+          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
+
+      - name: Verify tarball structure
+        run: |
+          tar -tzf "$TARBALL" | head -20
+          # Sanity-check the critical files are present
+          for f in callpanel/module.xml callpanel/Callpanel.class.php callpanel/calls-contacts-panel/package.json callpanel/views/main.php; do
+            if ! tar -tzf "$TARBALL" | grep -q "^$f$"; then
+              echo "ERROR: $f missing from tarball"
+              exit 1
+            fi
+          done
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Only on tag push, not on workflow_dispatch from a branch
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            gh release create "${GITHUB_REF#refs/tags/}" \
+              --title "${GITHUB_REF#refs/tags/}" \
+              --notes "Calls + Contacts Panel ${{ steps.ver.outputs.version }} — FreePBX 16/17 compatible. See [CHANGES.md](CHANGES.md) and the changelog in module.xml." \
+              "$TARBALL"
+          else
+            echo "Not a tag push; skipping release creation. Tarball built at $TARBALL"
+          fi
