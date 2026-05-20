@@ -1,4 +1,4 @@
-# Current state — 2026-05-19
+# Current state — updated 2026-05-20
 
 ## Status table
 
@@ -7,69 +7,66 @@
 | **phase-01** | Baseline validate on FreePBX 16 sandbox (friend-match) | ✅ Complete (2026-05-19) |
 | **phase-02** | Baseline validate on FreePBX 17 sandbox (latest) | ✅ Complete (2026-05-19) |
 | **phase-03** | Forward-port module to FreePBX 17 | ✅ Complete (2026-05-19) |
-| **phase-04** | Ship to GitHub as v17.0.0 | 🟡 Committing now |
+| **phase-04** | Ship to GitHub as v17.0.0 | ✅ Complete (2026-05-19) — v17.0.0 thru v17.0.2 |
+| **phase-06** | Production-quality validation (v17.0.3) | ✅ Complete (2026-05-19) |
+| **phase-05** | Modernization (CRA → Vite, jest 27 → 29, React 17 → 18, etc.) | ⏸ Deferred — see [phase-05/IMPROVEMENTS.md](phase-05-modernization/IMPROVEMENTS.md) |
 
-## What exists
+## Latest release
 
-**Repo:** Cloned from `ejosterberg/freepbx-realtime-calls-contacts-panel`
-into this directory on 2026-05-19. The fork was created at some prior
-point but never modified — it tracks upstream's archived state from
-2022-01-15.
+**v17.0.3** — 2026-05-19. Released artifact at
+[`callpanel-17.0.3.tgz`](https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/download/v17.0.3/callpanel-17.0.3.tgz)
+(1.86 MB).
 
-**Codebase as inherited:**
-- PHP module wrapper: `Callpanel.class.php` (403 lines), `module.xml`,
-  `views/main.php`, install/uninstall stubs
-- NodeJS backend: `calls-contacts-panel/` — Node 16, TypeScript 4.5,
-  Express 4, socket.io 4, mysql2 — ~80 KB source
-- React frontend: `calls-contacts-panel/frontend/` — React 17,
-  react-scripts 5 (CRA, deprecated), Tailwind 3.0 — ~64 KB source
-- Total ~166 KB code
+Validated end-to-end (Debian 12 + Rocky 8):
 
-**Module declares compat:** FreePBX 16.0 only (per module.xml).
-Depends on: contactmanager ge 16.0.17, cidlookup ge 16.0.5, pm2 ge 13.0.3.8.
+- PM2 process online + stable
+- All 4 HTTP endpoints return 200
+- WebSocket auth + real-time events work
+- AMI active-call detection works (channel grouping correct, status,
+  duration, channel name)
+- Caller-ID contact matching works ("Jane Doe (5551234567)" displayed
+  for matched call)
+- Contact CRUD round-trips through FreePBX Contact Manager
+- Apache reverse-proxy works for HTTP + WebSocket + polling fallback
+- npm audit: 0 critical CVEs
+- SonarQube: 0 vulnerabilities (A rating)
 
-## Tech-debt inventory (carried from upstream)
+## What exists in this repo
 
-- Node 16 — EOL since 2023
-- axios 0.24 — pre-1.0, has known CVEs in this range
-- React 17 — supported but old
-- react-scripts 5 (CRA) — deprecated by Meta in 2025
-- Jest 27 — current is 29
-- TypeScript 4.5 → 5.x available
-- `calls-contacts-panel/package.json:51` declares MIT — inconsistent
-  with project AGPLv3 license (fix in phase-01)
-- `frontend/package.json` has no license field at all (fix in phase-01)
+- **PHP module wrapper** — `Callpanel.class.php`, `module.xml`,
+  `views/main.php`, install/uninstall stubs (~500 lines of PHP)
+- **NodeJS backend** — `calls-contacts-panel/` (TypeScript 4.9 +
+  Express 4 + socket.io 4.8 + mysql2 3.x + yana AMI client)
+- **React frontend** — `calls-contacts-panel/frontend/` (React 17 +
+  react-scripts 5 + Tailwind 3 + i18next, 5 languages)
+- **Docs** — `docs/` (INSTALL, CONFIGURATION, USAGE, TROUBLESHOOTING,
+  UPGRADE, FAQ, PROVISIONING-YEALINK, PROVISIONING-FANVIL),
+  `README.md`, `CHANGES.md`, `CHANGELOG.md`
+- **Specs** — `specs/` (constitution + handoff + 6 phase dirs + security
+  audit v1+v2 + improvements roadmap)
+- **CI** — `.github/workflows/release.yml` (auto-builds tarball on tag
+  push, creates GitHub release)
+- **SonarQube** — project tracked at
+  [`freepbx-callpanel`](http://10.32.161.205:9000/dashboard?id=freepbx-callpanel)
 
-## Schema
+## Tech debt (deferred to phase-05)
 
-No DB schema of its own. Reads from FreePBX's existing MariaDB tables
-(asterisk DB, contactmanager tables). Writes via FreePBX module APIs.
+- React 17 (current is 18+; CRA 5 transitively pulls 14 high-severity
+  build-time CVEs — not runtime, but supply-chain risk during install)
+- create-react-app (deprecated by Meta 2025; migrate to Vite)
+- jest 27 (current is 29+; pulls @babel/traverse + minimist + form-data
+  high-severity CVEs in dev deps)
+- axios formerly in package.json (removed in v17.0.2; never used in code)
+
+Full roadmap in [phase-05-modernization/IMPROVEMENTS.md](phase-05-modernization/IMPROVEMENTS.md).
 
 ## Sandbox infrastructure
 
-| VMID | Name | Stack | Status |
-|---|---|---|---|
-| 921 | fpbx16-sandbox | Debian 12 / FreePBX 16.0.45 / Asterisk 18.26.4 | ✅ Healthy, panel installed + running |
-| 922 | fpbx17-sandbox | Debian 12 / FreePBX 17.0.28 / Asterisk 22.8.2 | ✅ Healthy, panel installed + running |
+**All three sandbox VMs destroyed 2026-05-20** after v17.0.3 ship-verification.
 
-Both on pmvm1. IPs TBD post-cloud-init.
+Re-provision via:
+- [`phase-01-fpbx16-validate/install-fpbx16.sh`](phase-01-fpbx16-validate/install-fpbx16.sh) — Debian 12 + FreePBX 16
+- [`phase-02-fpbx17-validate/setup-log.md`](phase-02-fpbx17-validate/setup-log.md) — Debian 12 + Sangoma FreePBX 17 official installer
+- [`phase-06-production-validation/install-fpbx16-rocky.sh`](phase-06-production-validation/install-fpbx16-rocky.sh) — Rocky 8 + FreePBX 16
 
-## Friend's target environment
-
-- FreePBX 16.0.45
-- Asterisk 18.9
-- pjsip
-- Host OS unknown (likely FreePBX Distro 12.7 SNG7-based, or rocky-based 12.8)
-
-The fpbx16-sandbox is the surrogate environment for friend validation.
-Behavior should match because the module is PHP+JS that talks to
-FreePBX's MariaDB and AMI socket — host OS doesn't matter much.
-
-## Updated metrics
-
-- Source files: ~166 KB total
-- PHP files: 4
-- TypeScript files: ~30 (backend + frontend combined)
-- Test files: 6 (.test.ts)
-- No CI configured yet
-- No SonarQube project yet
+Per proxmox-playbook.md, next free VMID is 924 (was 921-923).
