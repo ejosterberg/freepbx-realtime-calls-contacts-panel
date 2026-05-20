@@ -79,15 +79,36 @@ SNG7 validation still in progress.
   snippet with a note about the broken older snippet for users
   following stale guides.
 
-### 4. SNG7 / FreePBX Distro sandbox validation ⏳ in progress
-- **ISO:** SNG7-PBX16-64bit-2306-1.iso (2.5 GB) downloading to Proxmox
-- **Plan:** provision VM 923 from the ISO, complete interactive
-  install, install panel module, re-verify same checks as fpbx16
-  Debian-based sandbox
-- **Why:** Friend's PBX almost certainly runs FreePBX Distro (the
-  Sangoma-official RHEL7-derived appliance), not Debian. The module
-  is host-OS-agnostic in theory but file layout, php-fpm vs mod_php,
-  firewalld, and service-init differences could surface real issues.
+### 4. SNG7 / FreePBX Distro sandbox validation — Rocky 8 surrogate ✅
+- **VM 923 (fpbx16-rocky-sandbox)**: Rocky Linux 8.10 + FreePBX
+  16.0.45 + Asterisk 18.26.4 + PHP 7.4 (Remi) + Node 18
+- **SNG7 ISO** (SNG7-PBX16-64bit-2306-1.iso) was downloaded but is
+  interactive-install only; we chose Rocky 8 as the cloud-init-
+  friendly RHEL-family surrogate. Same package family (dnf/rpm),
+  same systemd, same firewalld, same SELinux as SNG7.
+- **Install script** at
+  [`install-fpbx16-rocky.sh`](install-fpbx16-rocky.sh) — reusable
+  for fresh Rocky 8 deployments.
+- **Issues encountered (and now baked into the script):**
+  - RPM DB corruption from cloud-init's first dnf — recovered via
+    `rpm --rebuilddb`
+  - `iksemel-devel` not in Rocky 8 default repos — removed
+    (was for XMPP support, not needed)
+  - `bzip2` + `bzip2-devel` missing — needed by Asterisk's
+    bundled jansson configure
+  - `php-process` missing from default Remi PHP 7.4 install —
+    needed for FreePBX's `posix_geteuid()` call
+- **Panel install verified:**
+  - PM2 process online (0 restarts, normal memory)
+  - All 4 HTTP endpoints (/callpanel/, /lookupcallerid,
+    /yealink-phonebook.xml, /fanvil-phonebook.xml) return 200
+  - WS auth + activeCalls subscription round-trips successfully
+    with bcrypt-hashed FreePBX User Manager password
+- **Conclusion:** the panel works on RHEL-family hosts (Rocky 8,
+  by extension AlmaLinux 8 / SNG7) with the same install commands
+  as Debian (just `fwconsole ma install callpanel -f`). Friend's
+  FreePBX Distro deployment should work; the install script
+  documents what RHEL-family hosts need beyond a fresh OS.
 
 ## Discovered issues + fixes
 

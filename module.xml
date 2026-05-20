@@ -1,10 +1,11 @@
 <module>
   <rawname>callpanel</rawname>
   <name>Calls + Contacts Panel</name>
-  <version>17.0.2</version>
+  <version>17.0.3</version>
   <publisher>Alexander Droste (original), Eric Osterberg (fork)</publisher>
   <license>AGPLv3</license>
-  <changelog>*17.0.2* Security: clear all critical CVEs (mysql2 RCE, socket.io-parser injection); bump runtime deps; TypeScript 4.9; remove unused axios
+  <changelog>*17.0.3* Production validation: UI, real call flow, Apache reverse-proxy (fixed broken WS snippet), Rocky 8 (SNG7-surrogate) sandbox; +es/fr/it translations
+*17.0.2* Security: clear all critical CVEs (mysql2 RCE, socket.io-parser injection); bump runtime deps; TypeScript 4.9; remove unused axios
 *17.0.1* Fix CI tarball build (no functional changes)
 *17.0.0* Fork: FreePBX 17 compatibility, Node 18+, npm build wired into install, PHP 8.x null-safety, license metadata fixes
 *16.0.0* Initial release (upstream by Alexander Droste)</changelog>

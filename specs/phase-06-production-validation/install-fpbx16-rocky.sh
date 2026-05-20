@@ -22,6 +22,7 @@ dnf config-manager --set-enabled powertools || dnf config-manager --set-enabled 
 dnf install -y \
   wget curl git rsync vim nano \
   gcc gcc-c++ make autoconf automake libtool m4 pkgconfig \
+  bzip2 bzip2-devel patch which \
   mariadb-server mariadb \
   httpd \
   cronie at \
@@ -45,7 +46,8 @@ dnf install -y \
   php php-cli php-common php-curl php-mbstring \
   php-gd php-mysqlnd php-bcmath \
   php-zip php-xml php-imap php-snmp \
-  php-fpm php-intl php-ldap php-sqlite3
+  php-fpm php-intl php-ldap php-sqlite3 \
+  php-process php-pdo
 
 # Tune PHP for FreePBX
 PHPINI=/etc/php.ini
@@ -78,7 +80,7 @@ dnf install -y \
   libsrtp-devel libtiff-devel \
   unixODBC-devel libpq-devel \
   gsm-devel speex-devel speexdsp-devel libvorbis-devel \
-  libcurl-devel libical-devel iksemel-devel neon-devel \
+  libcurl-devel libical-devel neon-devel \
   libxml2-devel binutils-devel net-snmp-devel \
   lua-devel libcap-devel openldap-devel \
   python3 python3-devel \

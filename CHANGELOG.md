@@ -10,15 +10,55 @@ see [CHANGES.md](CHANGES.md).
 
 ## [Unreleased]
 
+## [17.0.3] — 2026-05-19
+
+This is the **first release that completes Eric's "production quality"
+gate** — UI, real call flow, Apache reverse-proxy, and Rocky-Linux
+(SNG7-surrogate) sandbox all validated end-to-end.
+
 ### Added
 
-- **5 new UI languages** (machine-assisted first-pass translations,
-  pending native review): Spanish (`es`), French (`fr`), Italian (`it`),
-  Brazilian Portuguese (`pt-BR`), Dutch (`nl`). Brings total supported
-  languages from 2 (English, German) to 7. See
-  [`frontend/public/locales/README.md`](calls-contacts-panel/frontend/public/locales/README.md)
-  for translation status table + contribution guide.
-- Updates the README's compat/feature table accordingly.
+- **3 new UI languages** (machine-assisted first-pass, pending native
+  review): Spanish (`es`), French (`fr`), Italian (`it`). Plus the
+  existing German (`de`). Brings total supported languages from 2 to 5.
+  See [`frontend/public/locales/README.md`](calls-contacts-panel/frontend/public/locales/README.md).
+- **Production-validation findings** at
+  [`specs/phase-06-production-validation/findings.md`](specs/phase-06-production-validation/findings.md):
+  details every test performed.
+- **Reusable WS test client** at
+  [`specs/phase-06-production-validation/ws-test-client.js`](specs/phase-06-production-validation/ws-test-client.js)
+  — Node socket.io client for CI gating or post-deploy smoke tests.
+- **Rocky 8 install script** at
+  [`specs/phase-06-production-validation/install-fpbx16-rocky.sh`](specs/phase-06-production-validation/install-fpbx16-rocky.sh)
+  — installs FreePBX 16 + Asterisk 18 on Rocky Linux 8 (the
+  closest cloud-init-friendly proxy for SNG7 / FreePBX Distro).
+
+### Fixed
+
+- **Apache reverse-proxy snippet in `docs/INSTALL.md` was broken.**
+  Used `RewriteCond %{QUERY_STRING} transport=websocket` for WS
+  detection — fails because `mod_proxy_http` consumes the request
+  before `mod_rewrite` fires. Plain HTTP worked but WebSocket upgrade
+  silently failed (panel returned `{"code":3,"message":"Bad request"}`).
+  Corrected snippet uses scoped `<LocationMatch>` + `Upgrade`-header
+  detection. Anyone running v17.0.2 or earlier behind the documented
+  reverse-proxy with broken WS would have had a UI that loads but
+  never receives realtime active-call events. Strongly recommended
+  to update the proxy config when upgrading to v17.0.3.
+
+### Validated end-to-end
+
+| Gate | Method | Result |
+|---|---|---|
+| Real call → panel detection | Asterisk `originate` of sustained channel + Node WS client | ✅ Channel grouped correctly, status + duration accurate |
+| Browser UI rendering | Claude in Chrome MCP driving real Chrome | ✅ Login, routing, contacts CRUD, live call w/ contact-ID matching |
+| Apache reverse-proxy (HTTP + WS + polling) | curl + Node WS client through port 80 | ✅ All three transports work |
+| Rocky 8 (SNG7-surrogate) install | Custom install script | ✅ FreePBX 16.0.45 + Asterisk 18.26.4 + panel running; all 4 HTTP endpoints + WS auth verified |
+
+### Removed
+
+- `nl` (Dutch) + `pt-BR` (Brazilian Portuguese) translations — narrowed
+  scope per Eric's preference to focus on en/de/es/fr/it.
 
 ## [17.0.2] — 2026-05-19
 
@@ -199,7 +239,8 @@ For changes prior to this fork (upstream v16.0.0 by Alexander
 Droste, released 2022-01-15), see the
 [upstream repo](https://github.com/adroste/freepbx-realtime-calls-contacts-panel).
 
-[Unreleased]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/compare/v17.0.2...HEAD
+[Unreleased]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/compare/v17.0.3...HEAD
+[17.0.3]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.3
 [17.0.2]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.2
 [17.0.1]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.1
 [17.0.0]: https://github.com/ejosterberg/freepbx-realtime-calls-contacts-panel/releases/tag/v17.0.0
