@@ -63,6 +63,58 @@ sudo systemctl enable --now cron
 (This only affects fresh Debian 12 installs that didn't include
 cron — typical FreePBX Distro installs ship with it.)
 
+### Install fails: "Node version is: X.Y.Z requirement is 18.0.0"
+
+**FreePBX's bundled Node is too old.** The panel needs Node 18+;
+older FreePBX 16 installs (mid-2022 and earlier) ship Node 8 or
+12 via the `pm2` module.
+
+The fix is to upgrade FreePBX's `pm2` module — it bundles its own
+Node binary, and newer `pm2` versions ship newer Node.
+
+```bash
+# Check current versions
+sudo fwconsole ma list | grep pm2
+sudo -u asterisk -i bash -c 'which node; node --version'
+
+# Upgrade the pm2 module (this bumps Node too)
+sudo fwconsole ma upgrade pm2
+sudo fwconsole reload
+```
+
+If `fwconsole ma upgrade pm2` says "no update available", refresh
+the module repo cache first:
+
+```bash
+sudo fwconsole ma refreshsignatures
+sudo fwconsole ma listonline | grep pm2
+sudo fwconsole ma upgrade pm2
+```
+
+For very old installations where the in-place upgrade refuses to
+move past Node 8, do a clean reinstall of `pm2`:
+
+```bash
+sudo fwconsole ma uninstall pm2
+sudo fwconsole ma downloadinstall pm2
+sudo fwconsole reload
+```
+
+This is destructive only to the `pm2` module itself — any modules
+that use PM2 (UCP, this panel) will need a restart afterward.
+
+After Node is on 18+, retry the panel install:
+
+```bash
+sudo fwconsole ma install callpanel -f
+```
+
+**Why this is non-negotiable:** the panel's TypeScript build,
+React build, mysql2 3.x driver, and socket.io 4.8 server all
+require Node 14+, and several frontend deps need 18+. Backing
+down to Node 8 would require reverting to upstream's deprecated
+deps with known critical CVEs.
+
 ### Install fails: "tsc: not found" or "Backend build failed"
 
 **The TypeScript compiler isn't reachable** during the build step.
